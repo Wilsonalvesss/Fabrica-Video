@@ -1,0 +1,9 @@
+anthropic>=0.40
+edge-tts>=7.0
+requests>=2.31
+pillow>=10.1
+python-dotenv>=1.0
+fastapi>=0.110
+uvicorn>=0.29
+google-api-python-client>=2.120
+google-auth-oauthlib>=1.2
