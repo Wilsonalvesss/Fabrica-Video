@@ -40,7 +40,8 @@ MOTOR_PORTA = int(_env("MOTOR_PORTA", "8080"))
 # true = publica sozinho no YouTube sem passar pela aprovação
 AUTO_PUBLICAR = _env("AUTO_PUBLICAR", "false").lower() in ("1", "true", "sim")
 
-# Cenas: banco de vídeos/fotos do Pexels (grátis)
+# Cenas: banco de vídeos do Pixabay ou do Pexels (os dois grátis)
+PIXABAY_API_KEY = _env("PIXABAY_API_KEY")
 PEXELS_API_KEY = _env("PEXELS_API_KEY")
 
 # YouTube

@@ -60,6 +60,7 @@ def gerar_config() -> None:
         "": {"listen_host": "127.0.0.1", "listen_port": config.MOTOR_PORTA, "log_level": "INFO"},
         "app": {
             "pexels_api_keys": [config.PEXELS_API_KEY] if config.PEXELS_API_KEY else [],
+            "pixabay_api_keys": [config.PIXABAY_API_KEY] if config.PIXABAY_API_KEY else [],
             "llm_provider": "anthropic" if config.ANTHROPIC_API_KEY else "claude_code",
             "max_concurrent_tasks": 2,
         },
@@ -122,7 +123,7 @@ def criar_video(assunto: str, texto: str, termos: list, formato: str) -> str:
         "video_terms": termos,
         "video_aspect": formato,  # "16:9" ou "9:16"
         "match_materials_to_script": True,
-        "video_source": "pexels",
+        "video_source": "pexels" if config.PEXELS_API_KEY else "pixabay",
         "video_clip_duration": 5,
         "video_language": config.IDIOMA,
         "voice_name": voz(),

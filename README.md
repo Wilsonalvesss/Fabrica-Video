@@ -9,7 +9,7 @@ Nove agentes trabalham em sequência num escritório pixel art:
 | 1 | Pauta | escolhe o tema, se você não mandar um | Claude (sua assinatura) |
 | 2 | Roteiro | escreve o vídeo em blocos, título, descrição, tags, thumb e shorts | Claude (sua assinatura) |
 | 3 | Narração | gera a voz e a legenda | MoneyPrinterTurbo + ElevenLabs |
-| 4 | Cenas | baixa um vídeo do Pexels para cada bloco, na ordem do roteiro | MoneyPrinterTurbo + Pexels |
+| 4 | Cenas | baixa um vídeo de banco para cada bloco, na ordem do roteiro | MoneyPrinterTurbo + Pixabay (ou Pexels) |
 | 5 | Montagem | junta tudo em 1920x1080 com legenda e trilha | MoneyPrinterTurbo |
 | 6 | Shorts | faz os shorts 9:16 dos melhores trechos | MoneyPrinterTurbo |
 | 7 | Thumbnail | desenha a thumb amarela e confere Áudio, Pronúncia, Ordem e Legenda | Fábrica |
@@ -33,7 +33,7 @@ Na pasta do projeto:
 git clone https://github.com/Wilsonalvesss/fabrica-video
 cd fabrica-video
 python -m venv .venv
-.venv\Scripts\activate          (Windows)  ou  source .venv/bin/activate  (Mac/Linux)
+.venv\Scripts\python.exe -m pip install --upgrade pip   (Windows; use .venv\Scripts\python.exe no lugar de python)  ou  source .venv/bin/activate  (Mac/Linux)
 pip install -r requirements.txt
 copy .env.example .env          (Windows)  ou  cp .env.example .env       (Mac/Linux)
 python -m fabrica instalar
@@ -43,7 +43,9 @@ python -m fabrica instalar
 
 Abra o `.env` e preencha:
 - `ELEVENLABS_API_KEY` e `ELEVENLABS_VOICE_ID`: em elevenlabs.io, *Settings → API Keys*; o ID da voz fica na biblioteca de vozes.
-- `PEXELS_API_KEY`: grátis em [pexels.com/api](https://www.pexels.com/api/).
+- `PIXABAY_API_KEY`: crie uma conta grátis no [Pixabay](https://pixabay.com/accounts/register/) e, logado, abra
+  [pixabay.com/api/docs](https://pixabay.com/api/docs/#api_search_images): a chave aparece em "Parameters → key".
+  (O Pexels também funciona, mas parou de liberar chaves novas.)
 - `NICHO`: o assunto do canal, usado quando você não manda tema.
 
 ## 3. Conectar o YouTube (uma vez)
