@@ -220,7 +220,7 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
   <section id="view-fabrica" class="wrap" style="gap:16px">
     <form class="cmd" id="cmd">
       <label for="topic">PRÓXIMO VÍDEO (deixe em branco e o agente de pauta escolhe)</label>
-      <input id="topic" placeholder="ex.: Site para cavar ideias de vídeo com IA" autocomplete="off">
+      <input id="topic" placeholder="ex.: Como fazer um filme realista com IA" autocomplete="off">
       <button class="btn-sun" id="go" type="submit">▶ Produzir vídeo</button>
     </form>
 
@@ -317,7 +317,7 @@ function escritorio(v){
   if(v){
     const feitas=ETAPAS.reduce((s,a)=>s+(v.etapas[a.id].estado==="feito"?1:v.etapas[a.id].progresso),0);
     $("now-title").textContent=`${v.id} · ${v.titulo||v.tema||"escolhendo o tema"}`;
-    $("now-meta").textContent=(v.blocos?`${v.blocos} blocos · `:"")+({produzindo:"em produção",revisao:"pronto para revisão",aprovado:"enviando ao YouTube",publicado:"agendado no YouTube",ajuste:"aguardando ajuste do Claude Code",erro:"parou com erro"}[v.status]||v.status);
+    $("now-meta").textContent=(v.blocos?`${v.blocos} blocos · `:"")+({produzindo:"em produção",revisao:"pronto para revisão",aprovado:"enviando ao YouTube",publicado:"agendado no YouTube",erro:"parou com erro"}[v.status]||v.status);
     $("now-bar").style.width=(feitas/ETAPAS.length*100)+"%";
     const erro=ETAPAS.map(a=>v.etapas[a.id]).find(e=>e.estado==="erro");
     $("erro").textContent=erro?`Erro: ${erro.msg}`:"";
@@ -337,9 +337,8 @@ function card(v){
   const quando=v.publicar_em?new Date(v.publicar_em).toLocaleString("pt-BR",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
   if(v.status==="aprovado")pe=`<div class="stamp wait">↑ Aprovado · enviando pela API do YouTube</div>`;
   if(v.status==="publicado")pe=`<div class="stamp ok">✓ Agendado para ${quando} · <a style="color:inherit" href="https://youtu.be/${v.youtube_id}" target="_blank" rel="noopener">youtu.be/${v.youtube_id}</a></div>`;
-  if(v.status==="ajuste")pe=`<div class="stamp wait">↻ Ajuste salvo · peça ao Claude Code para aplicar</div>`;
   if(v.status==="erro")pe=`<div class="stamp wait">Parou com erro. Veja o registro na aba Fábrica.</div>`;
-  return `<article class="card"><div class="thumb"><img src="/midia/${v.id}/thumb.jpg?${v.duracao}" alt="Thumbnail de ${esc(v.titulo)}"><div class="dur">${esc(v.duracao||"")}</div></div>
+  return `<article class="card"><div class="thumb"><img onerror="this.remove()" src="/midia/${v.id}/thumb.jpg?${v.duracao}" alt="Thumbnail de ${esc(v.titulo)}"><div class="dur">${esc(v.duracao||"")}</div></div>
   <div class="cbody"><h3>${esc(v.titulo||v.tema)}</h3><div class="meta">LONGO · ${v.id} · ${v.blocos} blocos · ${v.cenas} cenas · ${v.shorts.length} shorts${quando&&v.status==="revisao"?` · sai ${quando}`:""}</div>
   <div class="checks">${checks}</div>${pe}</div></article>`;
 }
@@ -350,7 +349,7 @@ async function atualizar(){
   const atual=s.videos.find(v=>["produzindo","aprovado"].includes(v.status))||s.videos[0];
   escritorio(atual);
   const on=s.ocupada;$("status").className="status"+(on?" on":"");$("status").lastChild.textContent=on?"FÁBRICA PRODUZINDO":"FÁBRICA EM ESPERA";$("go").disabled=on;
-  const fila=s.videos.filter(v=>["revisao","aprovado","publicado","ajuste"].includes(v.status));
+  const fila=s.videos.filter(v=>["revisao","aprovado","publicado","erro"].includes(v.status));
   $("pending").textContent=fila.filter(v=>v.status==="revisao").length;
   const ativo=document.activeElement;
   if(!(ativo&&ativo.tagName==="TEXTAREA")&&![...document.querySelectorAll("video")].some(x=>!x.paused)){

@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import config, esteira, estado
+from . import config, esteira, estado, motor
 
 app = FastAPI(title="Fábrica")
 app.mount("/midia", StaticFiles(directory=config.VIDEOS_DIR), name="midia")
@@ -39,6 +39,8 @@ class Pedido(BaseModel):
 def produzir(p: Pedido):
     if _ocupada.locked():
         raise HTTPException(409, "A esteira já está produzindo um vídeo.")
+    if not motor.no_ar():
+        raise HTTPException(503, "O motor está desligado. Feche e abra de novo com: python -m fabrica iniciar")
     job = estado.criar(p.texto.strip())
     _rodar(esteira.produzir, "", job["id"])
     return {"id": job["id"]}

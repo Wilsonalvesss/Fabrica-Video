@@ -4,3 +4,5 @@ youtube_token.json
 videos/
 __pycache__/
 .venv/
+motor/
+motor.log

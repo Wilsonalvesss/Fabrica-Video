@@ -22,15 +22,23 @@ NICHO = _env("NICHO", "inteligência artificial na prática")
 IDIOMA = _env("IDIOMA", "pt-BR")
 DURACAO_ALVO_MIN = int(_env("DURACAO_ALVO_MIN", "8"))
 
-# Roteiro (Claude). Sem chave, o Claude Code escreve o roteiro (ver CLAUDE.md).
+# Roteiro: pela assinatura do Claude (CLI `claude`) ou, se houver, pela API da Anthropic
 ANTHROPIC_API_KEY = _env("ANTHROPIC_API_KEY")
-CLAUDE_MODEL = _env("CLAUDE_MODEL", "claude-sonnet-5-5")
+CLAUDE_MODEL = _env("CLAUDE_MODEL")  # vazio = modelo padrão da sua conta
+CLAUDE_CLI = _env("CLAUDE_CLI", "claude")
 
-# Voz: "edge" (grátis) ou "elevenlabs"
-VOZ_PROVEDOR = _env("VOZ_PROVEDOR", "edge")
-EDGE_VOZ = _env("EDGE_VOZ", "pt-BR-AntonioNeural")
+# Voz: ElevenLabs. Sem chave, cai na voz grátis da Microsoft (Edge)
 ELEVENLABS_API_KEY = _env("ELEVENLABS_API_KEY")
 ELEVENLABS_VOICE_ID = _env("ELEVENLABS_VOICE_ID")
+ELEVENLABS_VOICE_NOME = _env("ELEVENLABS_VOICE_NOME", "Narrador")
+EDGE_VOZ = _env("EDGE_VOZ", "pt-BR-AntonioNeural-Male")
+
+# Motor: MoneyPrinterTurbo
+MOTOR_DIR = RAIZ / "motor" / "MoneyPrinterTurbo"
+MOTOR_PORTA = int(_env("MOTOR_PORTA", "8080"))
+
+# true = publica sozinho no YouTube sem passar pela aprovação
+AUTO_PUBLICAR = _env("AUTO_PUBLICAR", "false").lower() in ("1", "true", "sim")
 
 # Cenas: banco de vídeos/fotos do Pexels (grátis)
 PEXELS_API_KEY = _env("PEXELS_API_KEY")

@@ -16,10 +16,14 @@ O roteiro é um JSON em videos/<id>/roteiro.json com este formato:
 }
 
 "de" e "ate" são índices de blocos (inclusivos) que viram um short de até 60 s.
-Sem ANTHROPIC_API_KEY, o Claude Code escreve esse arquivo (ver CLAUDE.md).
+O texto vem da sua assinatura do Claude (CLI `claude`) ou da API, se houver chave.
 """
 import json
+import os
 import re
+import shutil
+import subprocess
+import tempfile
 
 from . import config, estado
 
@@ -35,16 +39,41 @@ FORMATO = """{"titulo": str, "descricao": str, "tags": [str],
 
 
 def _claude(prompt: str) -> str:
-    import anthropic
+    if config.ANTHROPIC_API_KEY:
+        import anthropic
 
-    cliente = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
-    resp = cliente.messages.create(
-        model=config.CLAUDE_MODEL,
-        max_tokens=16000,
-        system=SISTEMA,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return "".join(b.text for b in resp.content if b.type == "text")
+        cliente = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
+        resp = cliente.messages.create(
+            model=config.CLAUDE_MODEL or "claude-sonnet-5-5",
+            max_tokens=16000,
+            system=SISTEMA,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return "".join(b.text for b in resp.content if b.type == "text")
+
+    # Sem chave: usa a assinatura do Claude pelo CLI do Claude Code, do mesmo jeito
+    # que o provider claude_code do MoneyPrinterTurbo (sem ferramentas, sem CLAUDE.md).
+    cli = shutil.which(config.CLAUDE_CLI) or config.CLAUDE_CLI
+    # no Windows o claude é um .cmd, que corta argumentos na quebra de linha
+    cmd = [cli, "-p", "--output-format", "json", "--system-prompt", " ".join(SISTEMA.split()),
+           "--tools", "", "--safe-mode"]
+    if config.CLAUDE_MODEL:
+        cmd += ["--model", config.CLAUDE_MODEL]
+    env = {k: v for k, v in os.environ.items()
+           if not k.startswith(("ANTHROPIC_", "CLAUDE_CODE_USE_")) or k == "ANTHROPIC_CONFIG_DIR"}
+    with tempfile.TemporaryDirectory() as pasta_vazia:
+        try:
+            r = subprocess.run(cmd, input=prompt, capture_output=True, text=True, encoding="utf-8",
+                               errors="replace", timeout=600, cwd=pasta_vazia, env=env)
+        except FileNotFoundError:
+            raise RuntimeError("não achei o comando `claude`. Instale o Claude Code e faça login (ver README)")
+    try:
+        saida = json.loads(r.stdout)
+    except json.JSONDecodeError:
+        raise RuntimeError(f"o Claude não respondeu: {(r.stderr or r.stdout)[:300]}")
+    if saida.get("is_error"):
+        raise RuntimeError(f"o Claude recusou: {saida.get('result', '')[:300]} (rode `claude` e faça login)")
+    return saida["result"]
 
 
 def _json(texto: str) -> dict:
@@ -76,12 +105,10 @@ def pauta(job: dict) -> None:
         if job["tema"]:
             e.atualizar(1, f"tema definido: {job['tema']}")
             return
-        if not config.ANTHROPIC_API_KEY:
-            raise RuntimeError("sem tema e sem ANTHROPIC_API_KEY: passe um tema ou peça ao Claude Code")
         e.atualizar(0.3, "lendo o nicho e escolhendo o tema")
         ideia = _json(_claude(
-            f'Sugira UM tema de vídeo longo para o canal, com potencial de clique. '
-            f'Responda {{"tema": "..."}}'))
+            'Sugira UM tema de vídeo longo para o canal, com potencial de clique. '
+            'Responda {"tema": "..."}'))
         job["tema"] = ideia["tema"]
         e.atualizar(1, f"tema: {job['tema']}")
 
@@ -90,11 +117,9 @@ def roteiro(job: dict, ajuste: str = "") -> dict:
     caminho = estado.pasta(job["id"]) / "roteiro.json"
     with estado.Etapa(job, "roteiro") as e:
         if caminho.exists() and not ajuste:
-            e.atualizar(0.5, "usando o roteiro escrito pelo Claude Code")
+            e.atualizar(0.5, "usando o roteiro já escrito")
             r = validar(json.loads(caminho.read_text(encoding="utf-8")))
         else:
-            if not config.ANTHROPIC_API_KEY:
-                raise RuntimeError("sem ANTHROPIC_API_KEY: peça ao Claude Code para escrever roteiro.json")
             minutos = config.DURACAO_ALVO_MIN
             prompt = (f"Tema: {job['tema']}\nDuração alvo: {minutos} minutos "
                       f"(cerca de {minutos * 3} blocos). Inclua de 2 a 4 shorts com os trechos mais fortes.\n"

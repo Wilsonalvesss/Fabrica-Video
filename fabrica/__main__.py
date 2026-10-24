@@ -1,9 +1,10 @@
 """Linha de comando da Fábrica.
 
-  python -m fabrica painel                 abre o painel em http://localhost:8000
-  python -m fabrica produzir "tema"        produz um vídeo (sem tema, a pauta escolhe)
-  python -m fabrica novo "tema"            cria a pasta do vídeo para o Claude Code escrever o roteiro
-  python -m fabrica continuar V03          roda a esteira de um vídeo que já tem roteiro.json
+  python -m fabrica instalar               baixa o motor (MoneyPrinterTurbo) e as dependências
+  python -m fabrica iniciar                liga o motor e abre o painel em http://localhost:8000
+  python -m fabrica conectar-youtube       autoriza a Fábrica a publicar no seu canal (uma vez)
+  python -m fabrica produzir "tema"        produz um vídeo pelo terminal (motor precisa estar ligado)
+  python -m fabrica continuar V03          retoma um vídeo que parou com erro
   python -m fabrica aprovar V03            aprova e agenda no YouTube
   python -m fabrica ajustar V03 "pedido"   refaz o vídeo com um ajuste
   python -m fabrica status                 lista os vídeos
@@ -18,16 +19,33 @@ def main(args):
         print(__doc__)
         return
     cmd, resto = args[0], args[1:]
-    if cmd == "painel":
-        from . import painel
+    if cmd == "instalar":
+        from . import motor
 
-        painel.rodar(int(resto[0]) if resto else 8000)
+        motor.instalar()
+    elif cmd in ("iniciar", "painel"):
+        import webbrowser
+
+        from . import motor, painel
+
+        proc = None
+        if not motor.no_ar():
+            print("Ligando o motor (MoneyPrinterTurbo)...")
+            proc = motor.iniciar()
+        try:
+            webbrowser.open("http://localhost:8000")
+            painel.rodar(8000)
+        finally:
+            if proc:
+                proc.terminate()
+    elif cmd == "conectar-youtube":
+        from . import youtube
+
+        canal = youtube._servico().channels().list(part="snippet", mine=True).execute()
+        print("Conectado ao canal:", canal["items"][0]["snippet"]["title"])
     elif cmd == "produzir":
         job = esteira.produzir(" ".join(resto))
         print(f"{job['id']}: {job['status']}  (pasta videos/{job['id']})")
-    elif cmd == "novo":
-        job = estado.criar(" ".join(resto))
-        print(f"{job['id']} criado. Escreva videos/{job['id']}/roteiro.json e rode: python -m fabrica continuar {job['id']}")
     elif cmd == "continuar":
         job = esteira.produzir(vid=resto[0])
         print(f"{job['id']}: {job['status']}")

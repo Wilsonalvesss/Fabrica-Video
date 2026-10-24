@@ -1,5 +1,4 @@
 anthropic>=0.40
-edge-tts>=7.0
 requests>=2.31
 pillow>=10.1
 python-dotenv>=1.0

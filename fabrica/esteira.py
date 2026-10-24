@@ -1,11 +1,11 @@
 """A esteira: roda os agentes em ordem e deixa o vídeo na fila de aprovação.
 
-Os agentes 1 a 8 produzem. O agente 9 (API do YouTube) só roda depois que
-você aprova o vídeo no painel ou pelo comando `aprovar`.
+Os agentes 1 a 8 produzem. O agente 9 (API do YouTube) roda depois que você
+aprova no painel, ou na hora se AUTO_PUBLICAR=true no .env.
 """
 import json
 
-from . import estado, midia, roteiro, youtube
+from . import config, estado, midia, roteiro, youtube
 
 
 def produzir(tema: str = "", vid: str = "") -> dict:
@@ -15,14 +15,15 @@ def produzir(tema: str = "", vid: str = "") -> dict:
         if job["etapas"]["pauta"]["estado"] != "feito":
             roteiro.pauta(job)
         r = roteiro.roteiro(job)
-        midia.narracao(job, r)
-        midia.cenas(job, r)
-        midia.montagem(job, r)
+        midia.video_longo(job, r)
         midia.shorts(job, r)
         midia.thumbnail(job, r)
         youtube.agendar(job)
     except Exception:
         return job  # o erro já ficou registrado no job pela etapa que falhou
+    if config.AUTO_PUBLICAR:
+        estado.registrar(job, f"{job['id']} pronto: publicando sem aprovação (AUTO_PUBLICAR)")
+        return aprovar(job["id"])
     job["status"] = "revisao"
     estado.registrar(job, f"{job['id']} foi pra fila de aprovação")
     return job
@@ -48,18 +49,12 @@ def ajustar(vid: str, pedido: str) -> dict:
         job["etapas"][k] = {"estado": "fila", "progresso": 0, "msg": ""}
     estado.registrar(job, f"ajuste pedido: {pedido}")
     base = estado.pasta(vid)
-    for pasta in ("audio", "cenas", "segmentos", "shorts"):
-        for arq in (base / pasta).glob("*"):
-            arq.unlink()
+    for arq in [*(base / "shorts").glob("*"), base / "video.mp4", base / "narracao.mp3", base / "legendas.srt"]:
+        arq.unlink(missing_ok=True)
     try:
         roteiro.roteiro(job, ajuste=pedido)
     except Exception:
-        # sem chave da API, o pedido fica salvo para o Claude Code aplicar no roteiro.json
-        (base / "AJUSTE_PENDENTE.txt").write_text(pedido, encoding="utf-8")
-        job["status"] = "ajuste"
-        job["etapas"]["roteiro"] = {"estado": "fila", "progresso": 0, "msg": "aguardando o Claude Code"}
-        estado.salvar(job)
-        return job
+        return job  # o erro ficou registrado na mesa do Roteiro
     return produzir(vid=vid)
 
 
