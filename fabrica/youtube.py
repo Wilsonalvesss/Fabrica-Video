@@ -12,16 +12,19 @@ from . import config, estado
 ESCOPOS = ["https://www.googleapis.com/auth/youtube.upload", "https://www.googleapis.com/auth/youtube"]
 
 
-def proximo_horario() -> datetime:
-    """Primeiro horário livre de HORARIOS a partir de amanhã que nenhum vídeo ocupa."""
+def proximo_horario(ignorar: str = "") -> datetime:
+    """Primeiro horário de HORARIOS, a partir de 1 hora de agora, que nenhum vídeo válido ocupa."""
     fuso = ZoneInfo(config.FUSO)
-    ocupados = {j.get("publicar_em") for j in estado.todos() if j.get("publicar_em")}
-    dia = datetime.now(fuso).date() + timedelta(days=1)
+    # vídeos com erro ou refeitos não seguram horário
+    ocupados = {j.get("publicar_em") for j in estado.todos()
+                if j.get("publicar_em") and j["id"] != ignorar and j.get("status") in ("revisao", "aprovado", "publicado")}
+    agora = datetime.now(fuso)
+    dia = agora.date()
     for _ in range(365):
         for h in config.HORARIOS:
             hh, mm = map(int, h.split(":"))
             slot = datetime(dia.year, dia.month, dia.day, hh, mm, tzinfo=fuso)
-            if slot.isoformat() not in ocupados:
+            if slot > agora + timedelta(hours=1) and slot.isoformat() not in ocupados:
                 return slot
         dia += timedelta(days=1)
     raise RuntimeError("nenhum horário livre no próximo ano")
@@ -30,7 +33,7 @@ def proximo_horario() -> datetime:
 def agendar(job: dict) -> None:
     with estado.Etapa(job, "agenda") as e:
         e.atualizar(0.5, "escolhendo o melhor horário")
-        job["publicar_em"] = proximo_horario().isoformat()
+        job["publicar_em"] = proximo_horario(job["id"]).isoformat()
         e.atualizar(1, f"publicação em {job['publicar_em'][:16].replace('T', ' ')}")
 
 
