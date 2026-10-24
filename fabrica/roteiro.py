@@ -34,7 +34,8 @@ Responda SOMENTE com JSON válido, sem comentários e sem markdown."""
 
 FORMATO = """{"titulo": str, "descricao": str, "tags": [str],
  "thumb": {"linha1": str (até 14 letras), "linha2": str (até 10 letras)},
- "blocos": [{"texto": str, "busca": str (2 a 4 palavras em inglês para banco de imagens)}],
+ "jogo": str (se o vídeo for sobre um jogo, o nome dele em inglês como aparece na Steam, ex. "EA SPORTS FC 26"; senão ""),
+ "blocos": [{"texto": str, "busca": str (2 a 4 palavras em inglês para banco de imagens; em vídeo de jogo, termos como "video game controller", "football stadium crowd", "esports arena")}],
  "shorts": [{"titulo": str, "de": int, "ate": int}]}"""
 
 
@@ -86,6 +87,7 @@ def validar(r: dict) -> dict:
         if not r.get(campo):
             raise ValueError(f"roteiro sem '{campo}'")
     r.setdefault("tags", [])
+    r["jogo"] = str(r.get("jogo") or "").strip()
     r.setdefault("thumb", {})
     r["thumb"].setdefault("linha1", r["titulo"].split(":")[0][:14])
     r["thumb"].setdefault("linha2", "")

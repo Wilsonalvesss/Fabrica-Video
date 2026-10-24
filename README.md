@@ -81,6 +81,11 @@ Isso liga o motor e abre o painel em http://localhost:8000. Digite o tema (ou de
 **Revisão** com **Aprovar**, **Revisar** (assistir e ler os blocos) e **Pedir um ajuste**. Ao aprovar,
 o agente 9 sobe o vídeo, a thumbnail e os shorts já agendados.
 
+**Cenas de jogo buscadas na web:** quando o vídeo é sobre um jogo, o roteiro informa o nome dele e a Fábrica
+busca sozinha na Steam as screenshots e os trailers oficiais, corta trechos de 5 segundos e mistura com cenas
+genéricas de games do Pixabay (controle, estádio, torcida). Os trailers são da EA/da produtora: o Content ID
+pode reivindicar o Short. Para usar só screenshots, coloque `USAR_TRAILERS=false` no `.env`.
+
 **Cenas do seu jogo:** banco de imagens grátis não tem gameplay de EA FC nem de outros jogos. Crie a pasta
 `clipes` dentro da Fábrica e jogue lá as suas gravações (mp4). Quando houver vídeos nessa pasta, a Fábrica
 corta trechos aleatórios de 5 segundos delas para montar as cenas, no lugar do Pixabay. Para voltar ao banco

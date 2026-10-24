@@ -15,7 +15,11 @@ def _env(nome, padrao=""):
 # Pastas
 VIDEOS_DIR = Path(_env("VIDEOS_DIR", str(RAIZ / "videos")))
 MUSICA_DIR = RAIZ / "assets" / "musica"
-CLIPES_DIR = RAIZ / "clipes"  # coloque aqui gravações suas (gameplay etc.) para virar as cenas
+CLIPES_DIR = RAIZ / "clipes"
+# Vídeo sobre jogo: busca as screenshots oficiais na Steam. Com trailers=true, corta também os trailers
+# oficiais (mais dinâmico, mas o Content ID do YouTube pode reivindicar).
+USAR_STEAM = _env("USAR_STEAM", "true").lower() in ("1", "true", "sim")
+USAR_TRAILERS = _env("USAR_TRAILERS", "true").lower() in ("1", "true", "sim")  # coloque aqui gravações suas (gameplay etc.) para virar as cenas
 WEB_DIR = RAIZ / "web"
 
 # Canal

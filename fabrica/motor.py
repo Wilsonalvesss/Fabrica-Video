@@ -116,7 +116,80 @@ def voz() -> str:
     return config.EDGE_VOZ
 
 
-def criar_video(assunto: str, texto: str, termos: list, formato: str, prefixo: str = "fabrica") -> str:
+def _pixabay(termos: list, prefixo: str, quantos: int) -> list:
+    """Cenas genéricas (controle, estádio, torcida...) do Pixabay, cortadas em trechos de 5 s."""
+    import random
+
+    if not config.PIXABAY_API_KEY or quantos <= 0:
+        return []
+    destino = PASTA / "storage" / "local_videos"
+    urls = []
+    for termo in termos:
+        try:
+            hits = requests.get("https://pixabay.com/api/videos/", timeout=30,
+                                params={"key": config.PIXABAY_API_KEY, "q": termo, "per_page": 5}).json().get("hits", [])
+        except (requests.RequestException, ValueError):
+            continue
+        urls += [h["videos"]["medium"]["url"] for h in hits if h.get("videos", {}).get("medium", {}).get("url")]
+    random.shuffle(urls)
+    nomes = []
+    for k, u in enumerate(urls[:quantos]):
+        nome = f"{prefixo}_px{k:02d}.mp4"
+        r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", u, "-t", "5", "-an",
+                            "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", str(destino / nome)])
+        if r.returncode == 0:
+            nomes.append(nome)
+    return nomes
+
+
+def _steam(jogo: str, prefixo: str, segundos: float, termos: list = ()) -> list:
+    """Baixa screenshots (e, se ligado, trechos de trailer) oficiais do jogo na loja da Steam."""
+    import random
+
+    busca = requests.get("https://store.steampowered.com/api/storesearch/",
+                         params={"term": jogo, "l": "brazilian", "cc": "BR"}, timeout=30).json()
+    itens = busca.get("items") or []
+    if not itens:
+        return []
+    appid = str(itens[0]["id"])
+    dados = requests.get("https://store.steampowered.com/api/appdetails",
+                         params={"appids": appid, "l": "brazilian"}, timeout=30).json()
+    info = (dados.get(appid) or {}).get("data") or {}
+    fotos = [s["path_full"] for s in info.get("screenshots", []) if s.get("path_full")]
+    filmes = []
+    for m in info.get("movies", []):
+        u = (m.get("mp4") or {}).get("max") or m.get("hls_h264") or m.get("dash_h264")
+        if u:
+            filmes.append(u)
+    destino = PASTA / "storage" / "local_videos"
+    destino.mkdir(parents=True, exist_ok=True)
+    for velho in destino.glob(f"{prefixo}_*"):
+        velho.unlink(missing_ok=True)
+    precisa = int(segundos // 4) + 3
+    random.shuffle(fotos)
+    nomes = []
+    if not fotos and not filmes:
+        return []
+    genericas = _pixabay(list(termos)[:4], prefixo, precisa // 3)  # 1/3 de cenas genéricas de games
+    if config.USAR_TRAILERS and filmes:
+        for k in range(precisa // 2):
+            nome = f"{prefixo}_tr{k:02d}.mp4"
+            r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                                "-ss", f"{random.uniform(3, 40):.1f}", "-i", random.choice(filmes), "-t", "5",
+                                "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", str(destino / nome)])
+            if r.returncode == 0:
+                nomes.append(nome)
+    for k, foto in enumerate(fotos[: precisa - len(nomes) - len(genericas)]):
+        nome = f"{prefixo}_ss{k:02d}.jpg"
+        baixar(foto, destino / nome)
+        nomes.append(nome)
+    nomes += genericas
+    random.shuffle(nomes)
+    return nomes
+
+
+def criar_video(assunto: str, texto: str, termos: list, formato: str, prefixo: str = "fabrica",
+                jogo: str = "") -> str:
     params = {
         "video_subject": assunto,
         "video_script": texto,
@@ -136,14 +209,20 @@ def criar_video(assunto: str, texto: str, termos: list, formato: str, prefixo: s
         "stroke_width": 2,
         "n_threads": 4,
     }
-    if clipes():
-        # tem gameplay seu em clipes/: usa ele no lugar do banco de imagens
-        segundos = len(texto.split()) / 2.3
+    segundos = len(texto.split()) / 2.3
+    locais = []
+    if clipes():  # gameplay seu em clipes/ tem prioridade
+        locais = _cortar_clipes(prefixo, segundos)
+    elif jogo and config.USAR_STEAM:
+        try:
+            locais = _steam(jogo, prefixo, segundos, termos)
+        except (requests.RequestException, ValueError, KeyError):
+            locais = []  # Steam fora do ar: segue com o banco de imagens
+    if locais:
         params["video_source"] = "local"
         params["match_materials_to_script"] = False
         params["video_concat_mode"] = "sequential"
-        params["video_materials"] = [{"provider": "local", "url": n, "duration": 5}
-                                     for n in _cortar_clipes(prefixo, segundos)]
+        params["video_materials"] = [{"provider": "local", "url": n, "duration": 5} for n in locais]
     r = requests.post(url("/api/v1/videos"), json=params, timeout=60)
     r.raise_for_status()
     return r.json()["data"]["task_id"]
