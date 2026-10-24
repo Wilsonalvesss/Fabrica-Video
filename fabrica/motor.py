@@ -116,7 +116,7 @@ def voz() -> str:
     return config.EDGE_VOZ
 
 
-def criar_video(assunto: str, texto: str, termos: list, formato: str) -> str:
+def criar_video(assunto: str, texto: str, termos: list, formato: str, prefixo: str = "fabrica") -> str:
     params = {
         "video_subject": assunto,
         "video_script": texto,
@@ -136,6 +136,14 @@ def criar_video(assunto: str, texto: str, termos: list, formato: str) -> str:
         "stroke_width": 2,
         "n_threads": 4,
     }
+    if clipes():
+        # tem gameplay seu em clipes/: usa ele no lugar do banco de imagens
+        segundos = len(texto.split()) / 2.3
+        params["video_source"] = "local"
+        params["match_materials_to_script"] = False
+        params["video_concat_mode"] = "sequential"
+        params["video_materials"] = [{"provider": "local", "url": n, "duration": 5}
+                                     for n in _cortar_clipes(prefixo, segundos)]
     r = requests.post(url("/api/v1/videos"), json=params, timeout=60)
     r.raise_for_status()
     return r.json()["data"]["task_id"]
@@ -156,8 +164,51 @@ def acompanhar(task_id: str, ao_progredir) -> dict:
 
 
 def baixar(uri: str, destino: Path) -> None:
+    tmp = destino.with_suffix(destino.suffix + ".baixando")
     with requests.get(url(uri) if uri.startswith("/") else uri, stream=True, timeout=600) as r:
         r.raise_for_status()
-        with open(destino, "wb") as f:
+        with open(tmp, "wb") as f:
             for parte in r.iter_content(1 << 20):
                 f.write(parte)
+    for _ in range(20):  # no Windows o player do painel pode estar segurando o arquivo antigo
+        try:
+            tmp.replace(destino)
+            return
+        except PermissionError:
+            time.sleep(3)
+    raise RuntimeError(f"{destino.name} está aberto em outro programa; feche o vídeo e tente de novo")
+
+
+# ---------- cenas com os seus próprios clipes (gameplay)
+
+VIDEO_EXT = {".mp4", ".mov", ".mkv", ".webm", ".avi"}
+
+
+def clipes() -> list:
+    pasta = config.CLIPES_DIR
+    return sorted(p for p in pasta.glob("**/*") if p.suffix.lower() in VIDEO_EXT) if pasta.exists() else []
+
+
+def _cortar_clipes(prefixo: str, segundos: float) -> list:
+    """Corta trechos de 5 s de pontos aleatórios dos seus clipes e põe na pasta do motor."""
+    import json as _json
+    import random
+
+    destino = PASTA / "storage" / "local_videos"
+    destino.mkdir(parents=True, exist_ok=True)
+    for velho in destino.glob(f"{prefixo}_*.mp4"):
+        velho.unlink(missing_ok=True)
+    fontes = clipes()
+    nomes = []
+    for k in range(int(segundos // 4) + 3):
+        fonte = random.choice(fontes)
+        info = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "json", str(fonte)],
+                              capture_output=True, text=True)
+        dur = float(_json.loads(info.stdout or "{}").get("format", {}).get("duration", 0) or 0)
+        inicio = random.uniform(0, max(0.0, dur - 6))
+        nome = f"{prefixo}_{k:02d}.mp4"
+        subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-ss", f"{inicio:.2f}", "-i", str(fonte),
+                        "-t", "5", "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", str(destino / nome)],
+                       check=True)
+        nomes.append(nome)
+    return nomes

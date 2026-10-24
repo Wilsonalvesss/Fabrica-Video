@@ -16,7 +16,15 @@ _ocupada = threading.Lock()
 def _rodar(func, *args):
     def alvo():
         with _ocupada:  # um vídeo por vez na esteira
-            func(*args)
+            try:
+                func(*args)
+            except Exception as erro:
+                vid = next((a for a in args if isinstance(a, str) and a.startswith("V")), "")
+                if vid:
+                    job = estado.ler(vid)
+                    job["status"] = "erro"
+                    estado.registrar(job, f"falhou: {erro}")
+                raise
     threading.Thread(target=alvo, daemon=True).start()
 
 

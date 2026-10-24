@@ -58,6 +58,13 @@ def salvar(job: dict) -> None:
         destino = pasta(job["id"]) / "job.json"
         tmp = destino.with_suffix(".tmp")
         tmp.write_text(json.dumps(job, ensure_ascii=False, indent=2), encoding="utf-8")
+        for tentativa in range(50):
+            try:
+                tmp.replace(destino)
+                return
+            except PermissionError:
+                # no Windows a troca falha se o painel estiver lendo o arquivo nesse instante
+                time.sleep(0.1)
         tmp.replace(destino)
 
 

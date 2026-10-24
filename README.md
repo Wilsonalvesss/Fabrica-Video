@@ -81,6 +81,11 @@ Isso liga o motor e abre o painel em http://localhost:8000. Digite o tema (ou de
 **Revisão** com **Aprovar**, **Revisar** (assistir e ler os blocos) e **Pedir um ajuste**. Ao aprovar,
 o agente 9 sobe o vídeo, a thumbnail e os shorts já agendados.
 
+**Cenas do seu jogo:** banco de imagens grátis não tem gameplay de EA FC nem de outros jogos. Crie a pasta
+`clipes` dentro da Fábrica e jogue lá as suas gravações (mp4). Quando houver vídeos nessa pasta, a Fábrica
+corta trechos aleatórios de 5 segundos delas para montar as cenas, no lugar do Pixabay. Para voltar ao banco
+de imagens, é só esvaziar a pasta.
+
 Quer 100% automático, sem revisão? Coloque `AUTO_PUBLICAR=true` no `.env`: ao terminar, ele já publica.
 
 Outros comandos: `python -m fabrica ajuda`. Se algo travar, o erro aparece embaixo do escritório e o

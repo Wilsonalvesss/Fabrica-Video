@@ -86,7 +86,7 @@ def video_longo(job: dict, r: dict) -> None:
     try:
         tid = motor.criar_video(r["titulo"], "\n\n".join(b["texto"] for b in r["blocos"]),
                                 [b["busca"] for b in r["blocos"]],
-                                "9:16" if job.get("formato") == "short" else "16:9")
+                                "9:16" if job.get("formato") == "short" else "16:9", prefixo=job["id"])
         job["motor_tarefa"] = tid
         estado.registrar(job, f"motor recebeu a tarefa {tid}")
         t = motor.acompanhar(tid, faixas)
@@ -116,7 +116,7 @@ def shorts(job: dict, r: dict) -> None:
         for n, s in enumerate(r["shorts"], 1):
             blocos = r["blocos"][s["de"]: s["ate"] + 1]
             tid = motor.criar_video(s["titulo"], " ".join(b["texto"] for b in blocos),
-                                    [b["busca"] for b in blocos], "9:16")
+                                    [b["busca"] for b in blocos], "9:16", prefixo=f"{job['id']}S{n}")
             t = motor.acompanhar(tid, lambda p: e.atualizar(
                 ((n - 1) + p / 100) / total, f"cortando o short {n}: {s['titulo']}"))
             motor.baixar(t["videos"][0], pasta / f"S{n:02d}.mp4")

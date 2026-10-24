@@ -54,7 +54,10 @@ def ajustar(vid: str, pedido: str) -> dict:
     estado.registrar(job, f"ajuste pedido: {pedido}")
     base = estado.pasta(vid)
     for arq in [*(base / "shorts").glob("*"), base / "video.mp4", base / "narracao.mp3", base / "legendas.srt"]:
-        arq.unlink(missing_ok=True)
+        try:
+            arq.unlink(missing_ok=True)
+        except OSError:
+            pass  # no Windows o player do painel pode estar segurando o arquivo; ele é sobrescrito depois
     try:
         roteiro.roteiro(job, ajuste=pedido)
     except Exception:

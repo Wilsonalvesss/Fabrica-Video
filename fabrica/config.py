@@ -15,6 +15,7 @@ def _env(nome, padrao=""):
 # Pastas
 VIDEOS_DIR = Path(_env("VIDEOS_DIR", str(RAIZ / "videos")))
 MUSICA_DIR = RAIZ / "assets" / "musica"
+CLIPES_DIR = RAIZ / "clipes"  # coloque aqui gravações suas (gameplay etc.) para virar as cenas
 WEB_DIR = RAIZ / "web"
 
 # Canal
