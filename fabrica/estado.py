@@ -33,12 +33,13 @@ def novo_id() -> str:
     return f"V{(max(nums) + 1 if nums else 1):02d}"
 
 
-def criar(tema: str) -> dict:
+def criar(tema: str, formato: str = "") -> dict:
     vid = novo_id()
     pasta(vid).mkdir(parents=True)
     job = {
         "id": vid,
         "tema": tema,
+        "formato": formato if formato in ("short", "longo") else config.FORMATO,
         "status": "produzindo",  # produzindo | revisao | aprovado | publicado | ajuste | erro
         "criado": time.time(),
         "etapas": {k: {"estado": "fila", "progresso": 0, "msg": ""} for k, _ in ETAPAS},

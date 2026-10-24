@@ -33,6 +33,7 @@ def ver_estado():
 
 class Pedido(BaseModel):
     texto: str = ""
+    formato: str = ""
 
 
 @app.post("/api/produzir")
@@ -41,7 +42,7 @@ def produzir(p: Pedido):
         raise HTTPException(409, "A esteira já está produzindo um vídeo.")
     if not motor.no_ar():
         raise HTTPException(503, "O motor está desligado. Feche e abra de novo com: python -m fabrica iniciar")
-    job = estado.criar(p.texto.strip())
+    job = estado.criar(p.texto.strip(), p.formato)
     _rodar(esteira.produzir, "", job["id"])
     return {"id": job["id"]}
 

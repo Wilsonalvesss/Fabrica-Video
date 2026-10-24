@@ -21,6 +21,9 @@ WEB_DIR = RAIZ / "web"
 NICHO = _env("NICHO", "inteligência artificial na prática")
 IDIOMA = _env("IDIOMA", "pt-BR")
 DURACAO_ALVO_MIN = int(_env("DURACAO_ALVO_MIN", "8"))
+# Formato padrão do botão Produzir vídeo: "short" (vertical) ou "longo" (16:9 + shorts)
+FORMATO = _env("FORMATO", "short")
+DURACAO_SHORT_S = int(_env("DURACAO_SHORT_S", "30"))
 
 # Roteiro: pela assinatura do Claude (CLI `claude`) ou, se houver, pela API da Anthropic
 ANTHROPIC_API_KEY = _env("ANTHROPIC_API_KEY")

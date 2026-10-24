@@ -82,11 +82,14 @@ def publicar(job: dict) -> None:
         yt = _servico()
         e.atualizar(0.02, "enviando via API oficial")
         partes = 1 + len(r["shorts"])
-        vid = _enviar(yt, base / "video.mp4", r["titulo"], r["descricao"], r["tags"], quando,
+        short = job.get("formato") == "short"
+        titulo = f"{r['titulo'][:90]} #shorts" if short else r["titulo"]
+        vid = _enviar(yt, base / "video.mp4", titulo, r["descricao"], r["tags"], quando,
                       lambda p: e.atualizar(p / partes, f"enviando o vídeo ({int(p * 100)}%)"))
         from googleapiclient.http import MediaFileUpload
 
-        yt.thumbnails().set(videoId=vid, media_body=MediaFileUpload(str(base / "thumb.jpg"))).execute()
+        if not short:  # o YouTube não usa thumbnail personalizada em Shorts
+            yt.thumbnails().set(videoId=vid, media_body=MediaFileUpload(str(base / "thumb.jpg"))).execute()
         job["youtube_id"] = vid
         job["shorts_ids"] = []
         for n, s in enumerate(r["shorts"], 1):

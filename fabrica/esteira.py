@@ -16,7 +16,11 @@ def produzir(tema: str = "", vid: str = "") -> dict:
             roteiro.pauta(job)
         r = roteiro.roteiro(job)
         midia.video_longo(job, r)
-        midia.shorts(job, r)
+        if job.get("formato") == "short":
+            with estado.Etapa(job, "shorts") as e:
+                e.atualizar(1, "o vídeo já é um short")
+        else:
+            midia.shorts(job, r)
         midia.thumbnail(job, r)
         youtube.agendar(job)
     except Exception:
@@ -65,7 +69,7 @@ def resumo(job: dict) -> dict:
     if (base / "roteiro.json").exists():
         r = json.loads((base / "roteiro.json").read_text(encoding="utf-8"))
     return {
-        **{k: job.get(k) for k in ("id", "status", "tema", "titulo", "duracao", "publicar_em",
+        **{k: job.get(k) for k in ("id", "status", "tema", "titulo", "formato", "duracao", "publicar_em",
                                    "youtube_id", "checks", "etapas", "log")},
         "blocos": len(r.get("blocos", [])),
         "cenas": job.get("cenas", 0),

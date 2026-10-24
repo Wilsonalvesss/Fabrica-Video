@@ -85,7 +85,8 @@ def video_longo(job: dict, r: dict) -> None:
     faixas(0)
     try:
         tid = motor.criar_video(r["titulo"], "\n\n".join(b["texto"] for b in r["blocos"]),
-                                [b["busca"] for b in r["blocos"]], "16:9")
+                                [b["busca"] for b in r["blocos"]],
+                                "9:16" if job.get("formato") == "short" else "16:9")
         job["motor_tarefa"] = tid
         estado.registrar(job, f"motor recebeu a tarefa {tid}")
         t = motor.acompanhar(tid, faixas)
@@ -153,7 +154,7 @@ def thumbnail(job: dict, r: dict) -> None:
             tam -= 6
         d.text((56, 170), linha2, font=fonte(tam), fill="white", stroke_width=10, stroke_fill=TINTA)
         _robo(d, 1020, 470, 170)
-        d.text((60, 650), f"LONGO · {job['id']}", font=fonte(30), fill=TINTA)
+        d.text((60, 650), f"{'SHORT' if job.get('formato') == 'short' else 'LONGO'} · {job['id']}", font=fonte(30), fill=TINTA)
         img.save(base / "thumb.jpg", quality=92)
 
         e.atualizar(0.9, "conferindo o vídeo")

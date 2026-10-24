@@ -120,16 +120,25 @@ def roteiro(job: dict, ajuste: str = "") -> dict:
             e.atualizar(0.5, "usando o roteiro já escrito")
             r = validar(json.loads(caminho.read_text(encoding="utf-8")))
         else:
-            minutos = config.DURACAO_ALVO_MIN
-            prompt = (f"Tema: {job['tema']}\nDuração alvo: {minutos} minutos "
-                      f"(cerca de {minutos * 3} blocos). Inclua de 2 a 4 shorts com os trechos mais fortes.\n"
-                      f"Formato: {FORMATO}")
+            if job.get("formato") == "short":
+                seg = config.DURACAO_SHORT_S
+                prompt = (f"Tema: {job['tema']}\nÉ um YouTube Short vertical de {seg} segundos: no máximo "
+                          f"{int(seg * 2.3)} palavras no total, em 2 ou 3 blocos curtos. A primeira frase "
+                          f"precisa prender em 2 segundos. \"shorts\" deve ser uma lista vazia.\n"
+                          f"Formato: {FORMATO}")
+            else:
+                minutos = config.DURACAO_ALVO_MIN
+                prompt = (f"Tema: {job['tema']}\nDuração alvo: {minutos} minutos "
+                          f"(cerca de {minutos * 3} blocos). Inclua de 2 a 4 shorts com os trechos mais fortes.\n"
+                          f"Formato: {FORMATO}")
             if ajuste and caminho.exists():
                 prompt = (f"Este é o roteiro atual:\n{caminho.read_text(encoding='utf-8')}\n\n"
                           f"Aplique este ajuste pedido pelo dono do canal: {ajuste}\n"
                           f"Devolva o roteiro completo no mesmo formato: {FORMATO}")
             e.atualizar(0.2, "escrevendo bloco a bloco")
             r = validar(_json(_claude(prompt)))
+        if job.get("formato") == "short":
+            r["shorts"] = []
         caminho.write_text(json.dumps(r, ensure_ascii=False, indent=2), encoding="utf-8")
         job["titulo"] = r["titulo"]
         job["blocos"] = len(r["blocos"])
