@@ -45,6 +45,10 @@ EDGE_VOZ = _env("EDGE_VOZ", "pt-BR-AntonioNeural-Male")
 MOTOR_DIR = RAIZ / "motor" / "MoneyPrinterTurbo"
 MOTOR_PORTA = int(_env("MOTOR_PORTA", "8080"))
 
+# Painel: 127.0.0.1 = só neste computador; 0.0.0.0 = também pelo celular na mesma rede (exige PAINEL_SENHA)
+PAINEL_HOST = _env("PAINEL_HOST", "127.0.0.1")
+PAINEL_SENHA = _env("PAINEL_SENHA")
+
 # true = publica sozinho no YouTube sem passar pela aprovação
 AUTO_PUBLICAR = _env("AUTO_PUBLICAR", "false").lower() in ("1", "true", "sim")
 

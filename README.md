@@ -91,6 +91,10 @@ pode reivindicar o Short. Para usar só screenshots, coloque `USAR_TRAILERS=fals
 corta trechos aleatórios de 5 segundos delas para montar as cenas, no lugar do Pixabay. Para voltar ao banco
 de imagens, é só esvaziar a pasta.
 
+**Pelo celular:** no `.env`, coloque `PAINEL_HOST=0.0.0.0` e uma senha em `PAINEL_SENHA`. Ao iniciar, a janela
+mostra o endereço para o celular (algo como `http://192.168.0.10:8000`). Funciona com o celular no mesmo
+Wi-Fi do notebook. Na primeira vez, o Windows pergunta se libera o acesso: marque "Redes privadas" e permita.
+
 Quer 100% automático, sem revisão? Coloque `AUTO_PUBLICAR=true` no `.env`: ao terminar, ele já publica.
 
 Outros comandos: `python -m fabrica ajuda`. Se algo travar, o erro aparece embaixo do escritório e o
